@@ -1,0 +1,133 @@
+<context>
+# Overview
+This project aims to develop a **fully automated AI-powered tool** that transforms long-form YouTube videos into engaging, ready-to-share short-form clips for platforms like TikTok. The core value proposition is a "zero-touch" experience: users provide a YouTube link, and the AI handles the entire process of identifying compelling segments, editing, and formatting them into multiple short clips. This eliminates the manual effort typically associated with content repurposing.
+
+# Core Features
+- **YouTube Video Ingestion:** Accepts a YouTube video URL to fetch content and metadata.
+- **AI-Powered Segment Identification & Extraction:**
+    - **Content Analysis:** Leverages AI/ML (NLP, speech analysis, potentially visual analysis) to understand the video's content, identify key topics, emotional peaks, questions, calls to action, or other indicators of engaging moments.
+    - **Automated Clipping:** Intelligently segments the video into multiple short clips based on the content analysis. Each clip should be self-contained and engaging.
+    - **Smart Duration Control:** AI determines optimal clip lengths suitable for short-form platforms (e.g., 15-60 seconds).
+- **AI-Driven Formatting & Enhancement:**
+    - **Automated Smart Reframing/Cropping:** Intelligently adjusts the aspect ratio to 9:16. Uses speaker detection (via audio-visual analysis) and object tracking to ensure the main subject/speaker remains dynamically in focus.
+    - **Automated Caption Generation:** Transcribes audio using high-accuracy models and overlays synchronized, well-styled captions.
+    - (Future) **AI-Generated Titles/Summaries:** Suggests or automatically creates catchy titles/descriptions for each clip.
+    - (Future) **Content-Aware Effects:** Potentially adds relevant simple effects or text overlays based on clip content.
+- **Batch Export:** Exports all generated short clips in a common video format (e.g., MP4).
+- **(Optional/Future) Review Interface:** A simple interface for users to quickly review the AI-generated clips and optionally discard any unwanted ones before final export.
+
+# User Experience
+- **User Personas:**
+    - Content Creators: YouTubers seeking maximum efficiency in repurposing content for TikTok, Shorts, Reels.
+    - Content Agencies: Businesses needing to scale short-form video production from existing long-form assets.
+- **Key User Flow (Ideal):**
+    1. User inputs YouTube video URL.
+    2. AI processes the video: downloads, transcribes, analyzes content, identifies segments, performs smart cropping, generates captions, and formats.
+    3. User receives a collection of ready-to-use short clips.
+- **UI/UX Considerations (if any UI is built beyond simple input/output):**
+    - Minimalist interface, primarily for inputting the URL and receiving output.
+    - (Future) A clean gallery view for reviewing generated clips.
+</context>
+<PRD>
+# Technical Architecture
+- **Backend / Core Logic:** Python is highly recommended due to its extensive AI/ML libraries and video/audio processing tools.
+    - **Video Acquisition:** `yt-dlp` for robust YouTube video downloading.
+    - **Audio Processing & Transcription:**
+        - **`faster-whisper`** (CTranslate2 implementation of OpenAI Whisper) for high-accuracy and fast speech-to-text.
+    - **NLP Engine:** Libraries like spaCy or transformers (Hugging Face) for transcript analysis (topic modeling, sentiment analysis, named entity recognition, question detection).
+    - **Smart Cropping & Visual Analysis Engine:**
+        - **Object/Person Detection:** **YOLOv8** for identifying people/faces in frames.
+        - **Face/Speaker Tracking:**
+            - **OpenCV** for implementing tracking logic (e.g., based on bounding box proximity to previous frame, or using built-in trackers).
+            - **`pyannote.video`** as a specialized library for robust face detection and tracking.
+        - **Speaker Diarization (for multi-speaker scenarios):** **`pyannote.audio`** to identify who is speaking and when, to guide the cropping focus.
+    - **Video Editing, Composition & Captioning Engine:**
+        - **FFmpeg** (via Python bindings like `ffmpeg-python`) for all core video manipulations:
+            - Audio extraction (input for Whisper).
+            - Trimming video segments.
+            - Applying calculated smart crops.
+            - Burning generated SRT captions into the video.
+            - Re-encoding to final format (MP4, 9:16).
+        - **`Captacity`** or similar libraries could be explored for caption styling and simplifying the Whisper+FFmpeg captioning pipeline.
+    - **AI Orchestration Layer:** Manages the full pipeline: video download -> transcription -> content analysis -> segment definition -> speaker diarization (if applicable) -> face/object tracking -> crop calculation -> video editing/formatting -> caption generation & embedding -> export.
+- **Data Models:**
+    - `SourceVideo`: YouTube URL, title, full transcript, audio file path, video file path.
+    - `AISegment`: Identified segment with start/end times, confidence score, detected topics/keywords, emotional tone, primary speaker ID (if diarized).
+    - `GeneratedClip`: Path to exported clip, associated `AISegment` data, generated title/captions, smart crop coordinates used per frame/sub-segment.
+- **APIs and Integrations:**
+    - Primarily relies on downloaded video/audio and local/cloud AI model processing.
+- **Infrastructure Requirements:**
+    - Significant compute resources (GPU strongly recommended) for AI model inference (transcription, NLP, YOLOv8, `pyannote`) and video encoding. Cloud-based processing (e.g., AWS SageMaker, Google AI Platform, Azure ML) or a powerful local machine will be necessary.
+    - Storage for source videos, intermediate files (audio, transcripts, model outputs), and final clips.
+
+# Development Roadmap
+- **MVP (Minimum Viable Product - AI Core Pipeline):**
+    1.  **Video Ingestion & Initial Prep:**
+        *   Implement YouTube video download (via URL using `yt-dlp`).
+        *   Extract audio track using FFmpeg.
+    2.  **Captioning Core:**
+        *   Integrate `faster-whisper` for transcription, generating an SRT or structured timing data.
+        *   Implement basic caption overlay onto video segments using FFmpeg (hardcoding SRT).
+    3.  **Basic AI Content Segmentation:**
+        *   Analyze transcript with simple NLP (e.g., sentence boundaries, keyword spotting for questions/exclamations) to define initial clip start/end points.
+    4.  **Basic Smart Cropping (Person-Focus):**
+        *   For each segment:
+            *   Use YOLOv8 to detect persons/faces in frames.
+            *   Implement a simple tracking logic (e.g., assume the largest detected person or the one closest to the center is the speaker).
+            *   Calculate a 9:16 crop centered on the primary detected person.
+            *   Use FFmpeg to apply the trim and crop.
+    5.  **Output:**
+        *   Export multiple generated, captioned, and cropped clips as MP4 files.
+    *The MVP focuses on an end-to-end automated pipeline, even if initial AI logic for segmentation and cropping is heuristic-based or simpler, to prove the "link to clips" concept.*
+
+- **Phase 2 (Enhanced AI Segmentation & Cropping Intelligence):**
+    1.  **Improved Content Segmentation AI:**
+        *   Incorporate more advanced NLP: sentiment analysis, topic modeling via spaCy/Hugging Face to find more engaging moments.
+    2.  **Speaker-Aware Cropping:**
+        *   Integrate `pyannote.audio` for speaker diarization.
+        *   Use diarization output to guide YOLOv8/`pyannote.video` tracking to focus the crop on the *active speaker*, especially in multi-person scenes.
+        *   Refine tracking logic for smoother camera motion (e.g., Kalman filters, or more advanced trackers from OpenCV/`pyannote.video`).
+    3.  **Improved Caption Styling:**
+        *   Explore `Captacity` or custom FFmpeg commands for better looking captions (font, size, background, positioning).
+
+- **Phase 3 (Advanced Visuals, Optimization & UI):**
+    1.  **Advanced Visual Analysis for Cropping:**
+        *   Incorporate scene change detection (OpenCV) to potentially influence clip boundaries or cropping style.
+        *   (Research) Explore models that can assess visual appeal or action to complement audio-based engagement cues.
+    2.  **Performance Optimization:**
+        *   Optimize AI models (e.g., quantization, pruning if using custom models).
+        *   Streamline the video processing pipeline for speed and reduced resource usage.
+    3.  **(Optional) Simple Review UI:**
+        *   Develop a basic web interface for users to input URL, see processing status, and review/download generated clips.
+    4.  **(Future) AI-Generated Titles/Summaries:**
+        *   Begin R&D on using NLP to generate short, catchy titles for each clip.
+
+# Logical Dependency Chain (AI-First)
+1.  Video & Audio Acquisition (`yt-dlp`, FFmpeg).
+2.  Transcription (`faster-whisper`).
+3.  Core Content AI (NLP for basic segmentation).
+4.  Person Detection (YOLOv8).
+5.  Basic Tracking & Cropping Logic (OpenCV).
+6.  Video Trimming & Cropping (FFmpeg).
+7.  Caption Generation & Embedding (FFmpeg, SRT).
+8.  Export.
+9.  Advanced Content AI (advanced NLP, sentiment).
+10. Speaker Diarization (`pyannote.audio`).
+11. Advanced Speaker Tracking & Smart Reframing (`pyannote.video`, improved OpenCV tracking).
+12. Visual Scene Analysis (OpenCV scene detection).
+
+# Risks and Mitigations
+- **AI Accuracy & Relevance:**
+    - AI might not always identify the "best" clips or frame the speaker perfectly. *Mitigation: Iterative development. Start with rule-based heuristics where complex AI is not yet mature. Focus on common engagement patterns. (Future) Allow user feedback if a UI is built.*
+- **Computational Cost & Performance:**
+    - Full AI pipeline will be resource-intensive. *Mitigation: Prioritize efficient models (`faster-whisper`, optimized YOLO). Design for potential cloud deployment for scaling. MVP may have longer processing times.*
+- **Complexity of AI/Video Pipeline:**
+    - Orchestrating many tools (YOLO, Whisper, Pyannote, FFmpeg) is complex. *Mitigation: Modular design for each component. Robust error handling. Extensive logging. Test each component independently and then integrated.*
+- **Subjectivity of "Engaging" & "Well-Framed":**
+    - These are subjective. *Mitigation: Define clear heuristics for MVP (e.g., speaker's face should be centered). (Future) Explore learning from user preferences or providing style options.*
+- **API Limitations/Changes & Copyright:** (Same as before)
+
+# Appendix
+- **Key Libraries/Tools:** `yt-dlp`, `faster-whisper`, `ffmpeg-python`, `OpenCV (cv2)`, `YOLOv8 (ultralytics)`, `pyannote.audio`, `pyannote.video`, `spaCy`, `Hugging Face transformers`.
+- [Links to relevant AI/ML research papers, model repositories, library documentation]
+</PRD> 

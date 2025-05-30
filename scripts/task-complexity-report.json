@@ -1,0 +1,133 @@
+{
+  "meta": {
+    "generatedAt": "2025-05-30T20:35:55.453Z",
+    "tasksAnalyzed": 15,
+    "totalTasks": 15,
+    "analysisCount": 15,
+    "thresholdScore": 5,
+    "projectName": "Taskmaster",
+    "usedResearch": true
+  },
+  "complexityAnalysis": [
+    {
+      "taskId": 1,
+      "taskTitle": "Project Setup & Environment Configuration",
+      "complexityScore": 2,
+      "recommendedSubtasks": 4,
+      "expansionPrompt": "Break down 'Project Setup & Environment Configuration' into subtasks covering: 1. Git repository initialization and basic .gitignore setup. 2. Python virtual environment creation and activation. 3. Installation of core dependencies (yt-dlp, ffmpeg-python, ultralytics, etc.) with version pinning. 4. Creation of the defined project directory structure (src/, data/, etc.).",
+      "reasoning": "Standard setup procedures with well-defined commands. Complexity is low, mainly ensuring all dependencies install correctly and paths are set up. Four subtasks cover the distinct setup stages."
+    },
+    {
+      "taskId": 2,
+      "taskTitle": "Implement YouTube Video Download Module",
+      "complexityScore": 3,
+      "recommendedSubtasks": 3,
+      "expansionPrompt": "Expand 'Implement YouTube Video Download Module' into subtasks for: 1. Implementing the core `download_video` function using `yt-dlp` to fetch MP4 videos. 2. Extracting and storing essential video metadata (e.g., title, original URL, downloaded file path, video ID) in the `SourceVideo` data model. 3. Adding error handling for common issues (e.g., invalid URL, video unavailable, network errors) and logging download progress/status.",
+      "reasoning": "The `yt-dlp` library handles the core download complexity. Task involves wrapping it, managing output paths, storing metadata, and basic error handling. Moderately low complexity."
+    },
+    {
+      "taskId": 3,
+      "taskTitle": "Implement Audio Extraction from Video",
+      "complexityScore": 3,
+      "recommendedSubtasks": 3,
+      "expansionPrompt": "Break down 'Implement Audio Extraction from Video' into subtasks: 1. Develop the `extract_audio` function using `ffmpeg-python` to process video files. 2. Configure FFmpeg parameters to ensure audio output is WAV, 16kHz, mono, suitable for `faster-whisper`. 3. Implement robust error handling for FFmpeg execution (capturing stderr) and update the `SourceVideo` data model with `audio_file_path`.",
+      "reasoning": "`ffmpeg-python` simplifies FFmpeg usage, but correct parameterization for specific audio formats is key. Error handling for external processes like FFmpeg is important. Complexity is low to moderate."
+    },
+    {
+      "taskId": 4,
+      "title": "Integrate `faster-whisper` for Transcription",
+      "complexityScore": 5,
+      "recommendedSubtasks": 4,
+      "expansionPrompt": "Expand 'Integrate `faster-whisper` for Transcription' into subtasks: 1. Implement `faster-whisper` model loading, including options for model size and device (CPU/GPU) selection. 2. Develop the core `transcribe_audio` function to process audio files and retrieve segments. 3. Implement SRT file generation logic from transcription segments, including timestamp formatting. 4. Implement extraction and structuring of word-level timestamps from transcription results.",
+      "reasoning": "Involves ML model integration, managing different model configurations, and precise formatting of outputs (SRT, word timestamps). Timestamp synchronization and formatting can be tricky. Medium complexity."
+    },
+    {
+      "taskId": 5,
+      "title": "Basic NLP Content Segmentation",
+      "complexityScore": 4,
+      "recommendedSubtasks": 4,
+      "expansionPrompt": "Break down 'Basic NLP Content Segmentation' into subtasks: 1. Implement logic to iterate through word timestamps from Task 4. 2. Develop duration-based segmentation logic to create initial clips within min/max duration. 3. Integrate basic sentence boundary detection (e.g., using punctuation from word timestamps or a simple spaCy sentence segmenter). 4. Define and populate the `AISegment` data model with start/end times, text, and duration.",
+      "reasoning": "The provided code is a good starting point. Refining it to robustly handle sentence boundaries and manage segment aggregation based on word timestamps adds some complexity. Medium-low complexity."
+    },
+    {
+      "taskId": 6,
+      "title": "Person Detection with YOLOv8",
+      "complexityScore": 5,
+      "recommendedSubtasks": 4,
+      "expansionPrompt": "Expand 'Person Detection with YOLOv8' into subtasks: 1. Implement YOLOv8 model loading (e.g., `yolov8n.pt`) and configuration. 2. Develop logic to extract frames from the source video corresponding to specific `AISegment` time windows using OpenCV. 3. Implement person detection inference (class 0) on the extracted frames using the loaded YOLOv8 model. 4. Process and store detection results (bounding boxes, confidence scores) per frame, associated with the `AISegment`.",
+      "reasoning": "Involves ML model usage, video frame processing with OpenCV, and managing detections over time segments. Ensuring efficient frame extraction and result aggregation. Medium complexity."
+    },
+    {
+      "taskId": 7,
+      "title": "Basic Person Tracking & Static Crop Calculation",
+      "complexityScore": 6,
+      "recommendedSubtasks": 4,
+      "expansionPrompt": "Break down 'Basic Person Tracking & Static Crop Calculation' into subtasks: 1. Aggregate person detections (from Task 6) across all frames of an `AISegment`. 2. Implement logic to select the primary target person for the segment (e.g., based on average size, frequency, or proximity to center). 3. Calculate static 9:16 aspect ratio crop coordinates centered on the target person, ensuring the crop stays within frame boundaries. 4. Implement fallback logic for segments where no person is detected (e.g., center crop).",
+      "reasoning": "Logic for selecting a 'target' person from multiple detections and calculating a stable, well-bounded crop requires careful geometric considerations and heuristics. The 'tracking' is simplified but still needs robust implementation. Medium complexity."
+    },
+    {
+      "taskId": 8,
+      "title": "Video Trimming, Cropping, and Re-encoding",
+      "complexityScore": 5,
+      "recommendedSubtasks": 4,
+      "expansionPrompt": "Expand 'Video Trimming, Cropping, and Re-encoding' into subtasks: 1. Implement FFmpeg video input setup for trimming based on `AISegment` start and end times. 2. Apply the calculated static crop (from Task 7) using FFmpeg's `crop` filter. 3. Scale the cropped video to a target 9:16 resolution (e.g., 720x1280) using FFmpeg's `scale` filter and set SAR. 4. Configure output re-encoding parameters (codec, preset, bitrate for video and audio) and manage FFmpeg process execution and error handling.",
+      "reasoning": "Constructing the correct FFmpeg filter chain for trim, crop, scale, and re-encode operations requires precision. Managing FFmpeg parameters and potential errors. Medium complexity."
+    },
+    {
+      "taskId": 9,
+      "title": "Caption Generation & Embedding on Clips",
+      "complexityScore": 6,
+      "recommendedSubtasks": 4,
+      "expansionPrompt": "Break down 'Caption Generation & Embedding on Clips' into subtasks: 1. Develop a robust function to parse the full SRT content (from Task 4) and extract caption entries relevant to a specific clip's time range. 2. Implement logic to re-calculate timestamps for these extracted captions to be relative to the clip's start time (00:00:00,000). 3. Generate a new, temporary SRT file containing only the re-timed captions for the current clip. 4. Implement the FFmpeg command to burn these clip-specific SRT captions onto the processed video clip, including basic styling options.",
+      "reasoning": "The most complex part is accurately slicing and re-timing SRT content for each clip. FFmpeg caption burning is straightforward once the SRT is correct. Medium-high complexity due to SRT manipulation."
+    },
+    {
+      "taskId": 10,
+      "title": "Implement MVP AI Orchestration Layer & Batch Export",
+      "complexityScore": 7,
+      "recommendedSubtasks": 6,
+      "expansionPrompt": "Expand 'Implement MVP AI Orchestration Layer & Batch Export' into subtasks: 1. Design the main pipeline function (`main_mvp_pipeline`) and define data flow and intermediate data management (e.g., paths, data structures). 2. Integrate calls to video download (Task 2) and audio extraction (Task 3). 3. Integrate audio transcription (Task 4) and basic content segmentation (Task 5). 4. Integrate person detection (Task 6) and static crop calculation (Task 7) for each segment. 5. Integrate video trimming, cropping, re-encoding (Task 8) and per-clip caption generation/embedding (Task 9). 6. Implement overall execution logic, error handling across stages, logging, output directory management, and `GeneratedClip` data model population.",
+      "reasoning": "High complexity due to integrating multiple complex modules, managing data flow, handling errors from various components, and ensuring the entire pipeline runs end-to-end. The provided code is a skeleton that needs careful fleshing out of inter-module communication and error handling."
+    },
+    {
+      "taskId": 11,
+      "title": "Advanced NLP for Content Segmentation",
+      "complexityScore": 7,
+      "recommendedSubtasks": 5,
+      "expansionPrompt": "Break down 'Advanced NLP for Content Segmentation' into subtasks: 1. Research and select appropriate advanced NLP models/libraries (e.g., spaCy for NER/dependency parsing, Hugging Face Transformers for sentiment/topic modeling). 2. Implement integration with the chosen NLP model(s) to analyze transcript text from `AISegment`s or word timestamps. 3. Develop scoring or heuristic logic to leverage NLP insights (e.g., high sentiment, presence of questions, key entities/topics) for ranking segment engagement potential. 4. Refine the `segment_content_basic` algorithm (or create `segment_content_advanced`) to incorporate these NLP features into segment boundary decisions and selection. 5. Test and iterate on the effectiveness of advanced segmentation compared to basic methods.",
+      "reasoning": "Involves integrating potentially heavy NLP models, designing sophisticated logic to interpret and use their outputs for segmentation, which can be R&D intensive. High complexity."
+    },
+    {
+      "taskId": 12,
+      "title": "Integrate Speaker Diarization (`pyannote.audio`)",
+      "complexityScore": 6,
+      "recommendedSubtasks": 4,
+      "expansionPrompt": "Expand 'Integrate Speaker Diarization (`pyannote.audio`)' into subtasks: 1. Set up the `pyannote.audio` library, including model downloads, dependencies, and Hugging Face authentication token configuration. 2. Implement the function to initialize and run the `pyannote.audio` diarization pipeline on an audio file. 3. Parse the output from `pyannote.audio` to extract structured speaker turns, including start time, end time, and speaker ID for each turn. 4. Store and associate speaker turn data with the `SourceVideo` or relevant `AISegment`s for downstream use.",
+      "reasoning": "`pyannote.audio` setup can be involved (auth, models). Processing its output into a usable format and handling its performance characteristics adds complexity. Medium-high complexity."
+    },
+    {
+      "taskId": 13,
+      "title": "Speaker-Aware Smart Cropping with Dynamic Focus",
+      "complexityScore": 9,
+      "recommendedSubtasks": 6,
+      "expansionPrompt": "Break down 'Speaker-Aware Smart Cropping with Dynamic Focus' into subtasks: 1. Research and design a robust strategy for correlating audio speaker IDs (from Task 12) with visual person detections (from Task 6 or `pyannote.video`) on a frame-by-frame basis. 2. Implement logic to identify the bounding box of the active speaker(s) in each relevant video frame. 3. Develop dynamic crop coordinate calculation logic that aims to keep the active speaker well-composed within a 9:16 frame. 4. Integrate a smoothing mechanism (e.g., Kalman filter, moving average on crop parameters) to ensure smooth visual transitions and avoid jitter. 5. Adapt the video processing step (Task 8) to apply dynamic, potentially per-frame, cropping using advanced FFmpeg filter expressions. 6. Rigorously test and refine speaker tracking accuracy, crop stability, and visual appeal across diverse video content.",
+      "reasoning": "Very high complexity. This is a significant R&D task involving sensor fusion (audio-visual), advanced tracking, potentially complex ML model integration (`pyannote.video`), and sophisticated FFmpeg usage for dynamic parameters. Requires substantial experimentation."
+    },
+    {
+      "taskId": 14,
+      "title": "Improved Caption Styling",
+      "complexityScore": 4,
+      "recommendedSubtasks": 3,
+      "expansionPrompt": "Expand 'Improved Caption Styling' into subtasks: 1. Research advanced FFmpeg subtitle styling options using the `subtitles` filter (e.g., `force_style` parameters) or the `ass` filter with ASS file format. 2. Experiment with different font choices, sizes, colors, outlines, backgrounds, and positioning to achieve modern short-form video aesthetics and optimal readability. 3. Update the caption burning function (Task 9) to apply the selected improved styles, potentially involving generating temporary ASS files if that route is chosen.",
+      "reasoning": "Primarily involves research into FFmpeg capabilities and aesthetic choices. If ASS format is adopted, generating those files adds a bit more work. Medium-low complexity."
+    },
+    {
+      "taskId": 15,
+      "title": "Advanced Visual Analysis: Scene Change Detection",
+      "complexityScore": 5,
+      "recommendedSubtasks": 4,
+      "expansionPrompt": "Break down 'Advanced Visual Analysis: Scene Change Detection' into subtasks: 1. Implement a scene change detection algorithm using OpenCV (e.g., color histogram comparison, frame differencing with thresholding). 2. Test and tune the scene change detection algorithm's parameters (e.g., threshold) for accuracy and desired sensitivity on various video types. 3. Modify the content segmentation logic (Task 5 or 11) to consider detected scene changes as potential natural boundaries for `AISegment`s or to adjust segment scores. 4. Explore how scene change information can inform the smart cropping strategy (Task 7 or 13), for instance, by resetting tracking or re-evaluating the scene composition after a cut.",
+      "reasoning": "Implementing a reliable scene change detection algorithm is moderately complex. The main challenge lies in effectively integrating these detected changes into the existing segmentation and cropping logic to provide tangible benefits. Medium complexity."
+    }
+  ]
+}
