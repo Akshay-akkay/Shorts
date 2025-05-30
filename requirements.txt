@@ -1,3 +1,10 @@
 moviepy==1.0.3
-yt-dlp
+yt-dlp==2025.5.22
+python-ffmpeg==2.0.12
+ultralytics==8.3.146
+faster-whisper==1.1.1
+spacy==3.8.7
+pyannote.audio==3.3.2
+# pyannote.video==1.6.3 # Removed due to incompatibility
+opencv-python==4.11.0.86
 google-generativeai 
